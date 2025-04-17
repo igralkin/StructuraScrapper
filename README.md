@@ -1,5 +1,3 @@
-# README.md
-
 ## 🕷 Structura Crawler
 
 Асинхронный краулер на базе Scrapy для обхода сайтов и сбора HTML-страниц в рамках одного домена. Поддерживает ограничение по глубине, количеству страниц, фильтрацию расширений и экспорт в JSON.
@@ -9,8 +7,8 @@
 ### 🚀 Установка
 
 ```bash
-git clone https://github.com/your-repo/structura-crawler.git
-cd structura-crawler
+git clone https://github.com/igralkin/StructuraScrapper.git
+cd StructuraScrapper
 pip install -r requirements.txt
 ```
 
