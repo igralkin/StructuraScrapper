@@ -3,6 +3,7 @@ import scrapy
 from urllib.parse import urlparse, urljoin
 import os
 import re
+from cms_detector.detector import detect_cms_by_html
 
 
 class BaseSpider(scrapy.Spider):
@@ -66,6 +67,7 @@ class BaseSpider(scrapy.Spider):
         - сохраняет HTML (если включено),
         - сохраняет ссылку и причину, если она пропущена,
         - извлекает новые внутренние ссылки.
+        - определяет CMS (только на первых 5 страницах).
         """
         if self.pages_crawled >= self.max_pages:
             return
@@ -76,6 +78,13 @@ class BaseSpider(scrapy.Spider):
         self.pages_crawled += 1
         url = response.url
         self.visited_urls.add(url)
+
+        # CMS определяем только на первых 5 страницах
+        if self.pages_crawled <= 5 and is_text_html:
+            cms = detect_cms_by_html(response.text, url)
+            self.logger.info(f"[CMS] {url} -> {cms}")
+        else:
+            cms = None
 
         # Сохранение HTML
         if self.save_html and is_text_html:
@@ -89,6 +98,7 @@ class BaseSpider(scrapy.Spider):
         yield {
             "url": url,
             "depth": response.meta.get("depth", 0),
+            "cms": cms,
             # "html": response.text if self.save_html and is_text_html else None,
         }
 
@@ -129,13 +139,11 @@ class BaseSpider(scrapy.Spider):
             # Переход по ссылке
             yield response.follow(abs_url, callback=self.parse)
 
-
     def _safe_filename(self, url):
         """Преобразует URL в безопасное имя файла"""
         parsed = urlparse(url)
         path = parsed.path.strip("/").replace("/", "_") or "index"
         return re.sub(r"[^\w\-_.]", "_", path)
-
 
     def _should_skip_url(self, url):
         """Проверяет, нужно ли исключить URL по расширению"""

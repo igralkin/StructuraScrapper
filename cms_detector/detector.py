@@ -9,6 +9,7 @@ from typing import Optional
 
 from .signatures import CMS_SIGNATURES
 
+
 def detect_cms_by_url(url: str) -> str:
     """
     Определяет CMS сайта по его URL.
@@ -22,6 +23,7 @@ def detect_cms_by_url(url: str) -> str:
         return detect_cms_by_html(html, url=url)
     except requests.RequestException:
         return 'html5'
+
 
 def detect_cms_by_html(html: str, url: Optional[str] = None) -> str:
     """
@@ -59,6 +61,7 @@ def detect_cms_by_html(html: str, url: Optional[str] = None) -> str:
                     continue
 
     return 'html5'
+
 
 if __name__ == '__main__':
     import sys
