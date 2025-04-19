@@ -9,42 +9,66 @@ class CMSDetector(BaseHandler):
     def extract(self, html: str) -> dict:
         # Возвращает словарь вида {"cms": <имя>}
         # Возможные значения: wordpress, bitrix, tilda, html5, unknown
-
-        lower_html = html.lower()
-
         try:
             soup = BeautifulSoup(html, "html.parser")
-            meta = soup.find("meta", attrs={"name": "generator"})
-            
-            if meta and meta.get("content"):
-                gen = meta["content"].lower()
-                if "wordpress" in gen:
-                    return {"cms": "wordpress"}
-                if "bitrix" in gen:
-                    return {"cms": "bitrix"}
-                if "tilda" in gen:
-                    return {"cms": "tilda"}
-        except Exception:
-            pass
-            #return {"cms": "unknown"}
+            lower_html = html.lower()
 
-        if (
-            re.search(r"/wp-content/", lower_html)
-            or re.search(r"/wp-login\.php", lower_html)
-            or re.search(r"/wp-admin", lower_html)
-            or re.search(r"/readme\.html", lower_html)
-        ):
-            return {"cms": "wordpress"}
+            if meta := soup.find("meta", attrs={"name": re.compile(r"generator", re.I)}):
+                content = meta.get("content", "").lower()
+                for cms in ["wordpress", "bitrix", "tilda"]:
+                    if cms in content:
+                        return {"cms": cms}
 
-        if re.search(r"/bitrix/", lower_html) or re.search(r"/bitrix/admin/", lower_html):
-            return {"cms": "bitrix"}
+            cms_checks = {
+                "wordpress": [
+                    lambda: soup.find(class_=re.compile(r"wp-header|site-header", re.I)),
+                    lambda: any(re.search(p, lower_html) for p in [
+                        r"/wp-content/",
+                        r"/wp-includes",
+                        r"wp-json",
+                        r"/wp-login\.php",
+                        r"/wp-admin",
+                        r"/readme\.html"
+                    ])
+                ],
+                "bitrix": [
+                    lambda: any(re.search(p, lower_html) for p in [
+                        r"/bitrix/",
+                        r"bx_",
+                        r"/bitrix/admin/"
+                    ]),
+                    lambda: any(
+                        "x-bitrix" in tag.attrs.get("data-signed", "")
+                        for tag in soup.find_all(attrs={"data-signed": True})
+                    )
+                ],
+                "tilda": [
+                    lambda: soup.find(class_=re.compile(r"t-\d+header|tilda", re.I)),
+                    lambda: any(re.search(p, lower_html) for p in [
+                        r"tilda\.cc",
+                        r"static\.tildacdn\.info",
+                        r"static\.tildacdn\.com"
+                    ])
+                ],
+                "html5": [
+                    lambda: (soup.find("header") or soup.find("footer"))
+                            and not any(re.search(p, lower_html) for p in [
+                                r"wp-",
+                                r"bitrix",
+                                r"tilda"
+                            ]),
+                    lambda: re.search(r"<!doctype html>", lower_html)
+                ]
+            }
 
-        if "tilda.cc" in lower_html or "static.tildacdn" in lower_html:
-            return {"cms": "tilda"}
+            for cms, checks in cms_checks.items():
+                if any(check() for check in checks):
+                    return {"cms": cms}
 
-        if re.search(r"<!doctype html>", lower_html):
-            return {"cms": "html5"}
+            return {"cms": "unknown"}
 
-        return {"cms": "unknown"}
+        except Exception as e:
+            self.logger.error(f"CMS detection error: {str(e)}")
+            return {"cms": "unknown"}
 
 
