@@ -1,8 +1,13 @@
 # base_spider.py
+import importlib
+import pkgutil
+
 import scrapy
 from urllib.parse import urlparse, urljoin
 import os
 import re
+
+from spiders.handlers.base_handler import BaseHandler
 
 
 class BaseSpider(scrapy.Spider):
@@ -28,6 +33,9 @@ class BaseSpider(scrapy.Spider):
         :param site_name: Название сайта для логов и вывода
         """
         super().__init__()
+
+        self.cms_detector = None
+        self.handlers = []
 
         self.start_urls = [start_url]
         self.allowed_domain = urlparse(start_url).netloc
@@ -58,6 +66,19 @@ class BaseSpider(scrapy.Spider):
         )
         spider.crawler = crawler
         spider.skip_extensions = crawler.settings.getlist("SKIP_EXTENSIONS") or []
+
+        handler_pkg = "spiders.handlers"
+        handler_dir = os.path.join(os.getcwd(), "spiders", "handlers")
+        for _, module_name, _ in pkgutil.iter_modules([handler_dir]):
+            module = importlib.import_module(f"{handler_pkg}.{module_name}")
+            for attr in dir(module):
+                cls_obj = getattr(module, attr)
+                if isinstance(cls_obj, type) and issubclass(cls_obj, BaseHandler) and cls_obj is not BaseHandler:
+                    instance = cls_obj()
+                    if instance.name() == "cms":
+                        spider.cms_detector = instance
+                    else:
+                        spider.handlers.append(instance)
         return spider
 
     def parse(self, response):
@@ -91,6 +112,23 @@ class BaseSpider(scrapy.Spider):
             "depth": response.meta.get("depth", 0),
             # "html": response.text if self.save_html and is_text_html else None,
         }
+
+        result = {
+            "url": url,
+            "depth": response.meta.get("depth", 0)
+        }
+
+        if is_text_html and self.cms_detector:
+            cms_info = self.cms_detector.extract(response.text)
+            cms = cms_info.get("cms", "unknown")
+            result["cms"] = cms
+
+            for handler in self.handlers:
+                if handler.name().endswith(f"_{cms}"):
+                    data = handler.extract(response.text)
+                    if data:
+                        result[handler.name()] = data
+        yield result
 
         # Прекращаем обработку, если это не HTML
         if not is_text_html:
