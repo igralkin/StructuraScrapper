@@ -37,18 +37,38 @@ python main.py https://example.com \
 ```
 crawler/
 ├── cms_detector/              # Модуль определения CMS
-│   ├── __init__.py            # Инициализация пакета
-│   ├── detector.py            # Основная логика определения CMS по URL/HTML
-│   └── signatures.py          # Сигнатуры для различных CMS
+│   ├── __init__.py
+│   ├── detector.py
+│   └── signatures.py
 │
-├── main.py                    # CLI-интерфейс
+├── block_parser/              # Модуль парсинга header/footer
+│   ├── __init__.py
+│   ├── parser.py              # parse_blocks(html, cms, url)
+│   ├── utils.py               # Логирование и утилиты
+│   └── parsers/
+│       ├── __init__.py
+│       ├── base.py            # Общие методы поиска
+│       ├── wordpress.py
+│       ├── tilda.py
+│       ├── bitrix.py
+│       ├── html5.py
+│       └── drupal.py
+│
+├── tests/                     # Юнит-тесты парсеров
+│   ├── test_wordpress.py
+│   ├── test_tilda.py
+│   ├── test_bitrix.py
+│   ├── test_drupal.py
+│   └── test_html5.py
+│
+├── main.py
 ├── spiders/
-│   └── base_spider.py         # Логика краулера
-├── settings.py                # Настройки Scrapy
-├── requirements.txt           # Зависимости
-├── Dockerfile                 # Контейнеризация
-├── .gitignore                 # Исключения
-└── output/                    # Выходные данные (html, json)
+│   └── base_spider.py
+├── settings.py
+├── requirements.txt
+├── Dockerfile
+├── .gitignore
+└── output/
 ```
 ---
 
@@ -101,3 +121,57 @@ docker run structura-crawler https://example.com --max-pages 200 --depth 3 --sav
 - https://automatisation.art
 - https://mindbox.ru
 - https://skillfactory.ru
+
+### 🧱 Парсинг блоков (Header/Footer Parser)
+
+Модуль `block_parser` автоматически извлекает структурные блоки страницы (`<header>` и `<footer>`) на основе HTML-кода и типа CMS.
+
+#### 📥 Входные параметры:
+- HTML страницы (`str`)
+- Название CMS (`str`): `wordpress`, `tilda`, `bitrix`, `html5`, `drupal`
+- (опц.) URL страницы — для логирования
+
+#### 📤 Формат результата:
+```json
+{
+  "cms": "wordpress",
+  "blocks": {
+    "header": {
+      "found": true,
+      "content": "<header>...</header>",
+      "strategy": "css:header"
+    },
+    "footer": {
+      "found": true,
+      "content": "<footer>...</footer>",
+      "strategy": "id:colophon"
+    }
+  }
+}
+```
+
+#### 🔍 Поддерживаемые CMS:
+- **WordPress** — `site-header`, `masthead`, `site-footer`, теги `<header>` / `<footer>`
+- **Tilda** — `t*-rec` с `t*-header`, `t*-footer` (ID: `rec123`)
+- **Bitrix** — классы `bx-layout`, `adm-footer`, `bx-header`
+- **HTML5** — теги `<header>`, `<footer>`
+- **Drupal** — классы `region-header`, `region-footer`, `block-system-branding`, ID `branding`, `footer`
+
+#### 🧪 Тесты:
+Модуль покрыт юнит-тестами (`tests/`):
+```bash
+python -m unittest discover -s tests
+```
+#### 🔌 Интеграция в краулер:
+Модуль встроен в `base_spider.py` и вызывается после определения CMS:
+```python
+from block_parser.parser import parse_blocks
+blocks = parse_blocks(html, cms, url=response.url)
+item['blocks'] = blocks
+```
+
+#### 📝 Логирование:
+Логируются найденные блоки, стратегии и URL:
+```
+[https://example.com] HEADER — found: True, strategy: css:header
+```
