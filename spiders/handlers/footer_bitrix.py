@@ -11,3 +11,7 @@ class FooterBitrix(BaseHandler):
         if footer:
             return {"html": str(footer)}
         return None
+
+    def find_all(self, soup):
+        return [tag for tag in soup.find_all(True)
+                if tag.name == "footer" or (tag.get("class") and any("bitrix" in c for c in tag.get("class", [])))]

@@ -71,4 +71,8 @@ class CMSDetector(BaseHandler):
             self.logger.error(f"CMS detection error: {str(e)}")
             return {"cms": "unknown"}
 
+    def find_all(self, soup):
+        return []
+
+
 

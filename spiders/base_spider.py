@@ -35,7 +35,8 @@ class BaseSpider(scrapy.Spider):
         super().__init__()
 
         self.cms_detector = None
-        self.handlers = []
+        self.cms_handlers = []
+        self.block_handlers = []
 
         self.start_urls = [start_url]
         self.allowed_domain = urlparse(start_url).netloc
@@ -77,11 +78,22 @@ class BaseSpider(scrapy.Spider):
                     instance = cls_obj()
                     if instance.name() == "cms":
                         spider.cms_detector = instance
+                        continue
+
+                    if instance.name().startswith("header_") or instance.name().startswith("footer_"):
+                        spider.cms_handlers.append(instance)
                     else:
-                        spider.handlers.append(instance)
+                        spider.block_handlers.append(instance)
+
+        if spider.cms_detector is None:
+            raise RuntimeError("CMSDetector not found")
+
+        crawler.settings.set("DEPTH_LIMIT", spider.max_depth)
+        crawler.settings.set("CLOSESPIDER_PAGECOUNT", spider.max_pages)
         return spider
 
     def parse(self, response):
+
         """
         Обрабатывает страницу:
         - сохраняет HTML (если включено),
@@ -107,28 +119,61 @@ class BaseSpider(scrapy.Spider):
                 f.write(response.text)
 
         # Сохранение результата
-        yield {
-            "url": url,
-            "depth": response.meta.get("depth", 0),
+        #yield {
+            #"url": url,
+            #"depth": response.meta.get("depth", 0),
             # "html": response.text if self.save_html and is_text_html else None,
-        }
+        #}
 
         result = {
             "url": url,
             "depth": response.meta.get("depth", 0)
         }
 
-        if is_text_html and self.cms_detector:
-            cms_info = self.cms_detector.extract(response.text)
-            cms = cms_info.get("cms", "unknown")
+        if is_text_html:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(response.text, "html.parser")
+            html = response.text
+
+            cms = self.cms_detector.extract(html).get("cms", "unknown")
             result["cms"] = cms
 
-            for handler in self.handlers:
-                if handler.name().endswith(f"_{cms}"):
-                    data = handler.extract(response.text)
-                    if data:
-                        result[handler.name()] = data
-        yield result
+            # Debug
+            self.logger.info(f"[DEBUG] Detected CMS: {cms}")
+            self.logger.info(f"[DEBUG] CMS handlers: {[h.name() for h in self.cms_handlers]}")
+            self.logger.info(f"[DEBUG] Block handlers: {[h.name() for h in self.block_handlers]}")
+
+            #Debug
+            for h in self.cms_handlers + self.block_handlers:
+                cnt = len(h.find_all(soup))
+                self.logger.info(f"[DEBUG] handler {h.name()} found {cnt}")
+
+            blocks = []
+            order_counter = 0
+
+            for h in self.cms_handlers:
+                if h.name().endswith(f"_{cms}"):
+                    for elem in h.find_all(soup):
+                        snippet = str(elem)
+                        pos = order_counter
+                        order_counter += 1
+                        blocks.append((pos, h.name(), snippet))
+
+            for h in self.block_handlers:
+                for elem in h.find_all(soup):
+                    snippet = str(elem)
+                    pos = order_counter
+                    order_counter += 1
+                    blocks.append((pos, h.name(), snippet))
+
+            blocks.sort(key=lambda x: x[0])
+
+            result["structure"] = [
+                {"type": t, "html": snip} for _, t, snip in blocks
+            ]
+
+            yield result
+            return
 
         # Прекращаем обработку, если это не HTML
         if not is_text_html:
@@ -140,7 +185,6 @@ class BaseSpider(scrapy.Spider):
         os.makedirs("output", exist_ok=True)
 
         links = response.css("a::attr(href)").getall()
-
         for href in links:
             abs_url = urljoin(response.url, href)
             domain = urlparse(abs_url).netloc

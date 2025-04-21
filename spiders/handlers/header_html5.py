@@ -11,3 +11,6 @@ class HeaderHTML5(BaseHandler):
         if header:
             return {"html": str(header)}
         return None
+
+    def find_all(self, soup):
+        return soup.find_all("header")

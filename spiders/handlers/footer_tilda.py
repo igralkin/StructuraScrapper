@@ -8,7 +8,11 @@ class FooterTilda(BaseHandler):
 
     def extract(self, html: str) -> dict | None:
         soup = BeautifulSoup(html, "html.parser")
-        footer = soup.find(lambda tag: tag.name == "footer" or tag.get("class") and any(re.match(r"t-\d+header", c) for c in tag.get("class", [])))
+        footer = soup.find(lambda tag: tag.name == "footer" or (tag.get("class") and any(re.match(r"t-\d+footer", c) for c in tag.get("class", []))))
         if footer:
             return {"html": str(footer)}
         return None
+
+    def find_all(self, soup):
+        return [tag for tag in soup.find_all(True)
+                if tag.name == "footer" or (tag.get("class") and any(re.match(r"t-\d+footer", c) for c in tag.get("class", [])))]

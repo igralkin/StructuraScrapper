@@ -11,3 +11,7 @@ class BaseHandler(ABC):
         #Выполняет анализ HTML и возвращает словарь с результатами.
         #Если блок не найден или детектор не применим, возвращает None
         pass
+
+    @abstractmethod
+    def find_all(self, soup):
+        pass

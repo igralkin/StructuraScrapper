@@ -11,3 +11,7 @@ class HeaderBitrix(BaseHandler):
         if header:
             return {"html": str(header)}
         return None
+
+    def find_all(self, soup):
+        return [tag for tag in soup.find_all(True)
+                if tag.name == "header" or (tag.get("class") and any("bitrix" in c for c in tag.get("class", [])))]
