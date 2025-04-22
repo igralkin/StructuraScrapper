@@ -1,3 +1,4 @@
+#base_handler
 from abc import ABC, abstractmethod
 
 class BaseHandler(ABC):
@@ -12,6 +13,6 @@ class BaseHandler(ABC):
         #Если блок не найден или детектор не применим, возвращает None
         pass
 
-    @abstractmethod
-    def find_all(self, soup):
-        pass
+    #@abstractmethod
+    #def find_all(self, soup):
+    #    pass

@@ -1,17 +1,19 @@
 from .base_handler import BaseHandler
 from bs4 import BeautifulSoup
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CMSDetector(BaseHandler):
     def name(self) -> str:
         return "cms"
 
-    def extract(self, html: str) -> dict:
+    def extract(self, soup: BeautifulSoup) -> dict:
         # Возвращает словарь вида {"cms": <имя>}
         # Возможные значения: wordpress, bitrix, tilda, html5, unknown
         try:
-            soup = BeautifulSoup(html, "html.parser")
-            lower_html = html.lower()
+            html = str(soup).lower()
 
             if meta := soup.find("meta", attrs={"name": re.compile(r"generator", re.I)}):
                 content = meta.get("content", "").lower()
@@ -22,7 +24,7 @@ class CMSDetector(BaseHandler):
             cms_checks = {
                 "wordpress": [
                     lambda: soup.find(class_=re.compile(r"wp-header|site-header", re.I)),
-                    lambda: any(re.search(p, lower_html) for p in [
+                    lambda: any(re.search(p, html) for p in [
                         r"/wp-content/",
                         r"/wp-includes",
                         r"wp-json",
@@ -32,7 +34,7 @@ class CMSDetector(BaseHandler):
                     ])
                 ],
                 "bitrix": [
-                    lambda: any(re.search(p, lower_html) for p in [
+                    lambda: any(re.search(p, html) for p in [
                         r"/bitrix/",
                         r"bx_",
                         r"/bitrix/admin/"
@@ -44,7 +46,7 @@ class CMSDetector(BaseHandler):
                 ],
                 "tilda": [
                     lambda: soup.find(class_=re.compile(r"t-\d+header|tilda", re.I)),
-                    lambda: any(re.search(p, lower_html) for p in [
+                    lambda: any(re.search(p, html) for p in [
                         r"tilda\.cc",
                         r"static\.tildacdn\.info",
                         r"static\.tildacdn\.com"
@@ -52,12 +54,12 @@ class CMSDetector(BaseHandler):
                 ],
                 "html5": [
                     lambda: (soup.find("header") or soup.find("footer"))
-                            and not any(re.search(p, lower_html) for p in [
+                            and not any(re.search(p, html) for p in [
                                 r"wp-",
                                 r"bitrix",
                                 r"tilda"
                             ]),
-                    lambda: re.search(r"<!doctype html>", lower_html)
+                    lambda: re.search(r"<!doctype html>", html)
                 ]
             }
 
@@ -68,11 +70,11 @@ class CMSDetector(BaseHandler):
             return {"cms": "unknown"}
 
         except Exception as e:
-            self.logger.error(f"CMS detection error: {str(e)}")
+            logger.error(f"CMS detection error: {str(e)}")
             return {"cms": "unknown"}
 
-    def find_all(self, soup):
-        return []
+    #def find_all(self, soup):
+    #    return []
 
 
 

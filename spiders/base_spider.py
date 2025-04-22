@@ -1,14 +1,13 @@
 # base_spider.py
-import importlib
-import pkgutil
-
 import scrapy
 from urllib.parse import urlparse, urljoin
 import os
 import re
+from bs4 import BeautifulSoup
 
 from spiders.handlers.base_handler import BaseHandler
-
+from spiders.handlers.generic_handler import GenericHandler, load_blocks_config
+from spiders.handlers.cms_detecor import CMSDetector
 
 class BaseSpider(scrapy.Spider):
     """
@@ -22,7 +21,7 @@ class BaseSpider(scrapy.Spider):
         'ROBOTSTXT_OBEY': False,
     }
 
-    def __init__(self, start_url, max_pages=1000, max_depth=5, save_html=False, site_name="site"):
+    def __init__(self, start_url, max_pages=1000, max_depth=5, save_html=False, site_name="site", config_path: str = 'spiders/handlers/blocks.yml'):
         """
         Инициализация параметров краулера.
 
@@ -34,12 +33,9 @@ class BaseSpider(scrapy.Spider):
         """
         super().__init__()
 
-        self.cms_detector = None
-        self.cms_handlers = []
-        self.block_handlers = []
-
         self.start_urls = [start_url]
-        self.allowed_domain = urlparse(start_url).netloc
+        parsed = urlparse(start_url)
+        self.allowed_domain = parsed.netloc
         self.site_name = site_name.replace(".", "_")
 
         self.max_pages = int(max_pages)
@@ -48,7 +44,15 @@ class BaseSpider(scrapy.Spider):
 
         self.pages_crawled = 0
         self.visited_urls = set()
+
+        #Путь для сохранения HTML
         self.output_dir = os.path.join("raw", self.site_name)
+
+        self.cms_detector = CMSDetector()
+
+        # Загрузка config
+        self.blocks_cfg = load_blocks_config(config_path)
+        self.block_handlers = [GenericHandler(bt, conf) for bt, conf in self.blocks_cfg.items()]
 
         # Подготовка пути к лог-файлу ссылок и его очистка
         self.link_log_path = os.path.join("output", f"{self.site_name}_links.txt")
@@ -58,38 +62,14 @@ class BaseSpider(scrapy.Spider):
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
-        spider = cls(
-            start_url=kwargs.get("start_url"),
-            max_pages=kwargs.get("max_pages", 1000),
-            max_depth=kwargs.get("max_depth", 5),
-            save_html=kwargs.get("save_html", False),
-            site_name=kwargs.get("site_name", "site")
-        )
-        spider.crawler = crawler
-        spider.skip_extensions = crawler.settings.getlist("SKIP_EXTENSIONS") or []
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        if not hasattr(spider.cms_detector, "extract"):
+            raise RuntimeError("CMSDetector not initialized")
 
-        handler_pkg = "spiders.handlers"
-        handler_dir = os.path.join(os.getcwd(), "spiders", "handlers")
-        for _, module_name, _ in pkgutil.iter_modules([handler_dir]):
-            module = importlib.import_module(f"{handler_pkg}.{module_name}")
-            for attr in dir(module):
-                cls_obj = getattr(module, attr)
-                if isinstance(cls_obj, type) and issubclass(cls_obj, BaseHandler) and cls_obj is not BaseHandler:
-                    instance = cls_obj()
-                    if instance.name() == "cms":
-                        spider.cms_detector = instance
-                        continue
-
-                    if instance.name().startswith("header_") or instance.name().startswith("footer_"):
-                        spider.cms_handlers.append(instance)
-                    else:
-                        spider.block_handlers.append(instance)
-
-        if spider.cms_detector is None:
-            raise RuntimeError("CMSDetector not found")
-
-        crawler.settings.set("DEPTH_LIMIT", spider.max_depth)
-        crawler.settings.set("CLOSESPIDER_PAGECOUNT", spider.max_pages)
+        crawler.settings.set('DEPTH_LIMIT', spider.max_depth)
+        crawler.settings.set('CLOSESPIDER_PAGECOUNT', spider.max_pages)
+        crawler.settings.set('DOWNLOAD_DELAY', crawler.settings.get('DOWNLOAD_DELAY', 0.25))
+        spider.skip_extensions = crawler.settings.getlist("SKIP_EXTENSIONS")
         return spider
 
     def parse(self, response):
@@ -118,67 +98,42 @@ class BaseSpider(scrapy.Spider):
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(response.text)
 
-        # Сохранение результата
-        #yield {
-            #"url": url,
-            #"depth": response.meta.get("depth", 0),
-            # "html": response.text if self.save_html and is_text_html else None,
-        #}
-
         result = {
             "url": url,
             "depth": response.meta.get("depth", 0)
         }
 
         if is_text_html:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(response.text, "html.parser")
-            html = response.text
+            soup = BeautifulSoup(response.text, "lxml")
 
-            cms = self.cms_detector.extract(html).get("cms", "unknown")
+
+            cms_data = self.cms_detector.extract(soup)
+            cms = cms_data.get("cms", "unknown")
             result["cms"] = cms
 
             # Debug
             self.logger.info(f"[DEBUG] Detected CMS: {cms}")
-            self.logger.info(f"[DEBUG] CMS handlers: {[h.name() for h in self.cms_handlers]}")
             self.logger.info(f"[DEBUG] Block handlers: {[h.name() for h in self.block_handlers]}")
 
             #Debug
-            for h in self.cms_handlers + self.block_handlers:
-                cnt = len(h.find_all(soup))
-                self.logger.info(f"[DEBUG] handler {h.name()} found {cnt}")
+            #for h in self.block_handlers:
+            #   cnt = len(h.find_all(soup))
+            #    self.logger.info(f"[DEBUG] handler {h.name()} found {cnt}")
 
-            blocks = []
-            order_counter = 0
-
-            for h in self.cms_handlers:
-                if h.name().endswith(f"_{cms}"):
-                    for elem in h.find_all(soup):
-                        snippet = str(elem)
-                        pos = order_counter
-                        order_counter += 1
-                        blocks.append((pos, h.name(), snippet))
-
-            for h in self.block_handlers:
-                for elem in h.find_all(soup):
-                    snippet = str(elem)
-                    pos = order_counter
-                    order_counter += 1
-                    blocks.append((pos, h.name(), snippet))
-
-            blocks.sort(key=lambda x: x[0])
-
-            result["structure"] = [
-                {"type": t, "html": snip} for _, t, snip in blocks
-            ]
+            structure = []
+            for handler in self.block_handlers:
+                if handler.block_type == "cms":
+                    continue
+                blocks = handler.extract(soup)
+                if not blocks:
+                    continue
+                for data in blocks:
+                    block_html = data.pop("html", None)
+                    entry = {"type": handler.name(), "html": block_html, **data}
+                    structure.append(entry)
+            result["structure"] = structure
 
             yield result
-            return
-
-        # Прекращаем обработку, если это не HTML
-        if not is_text_html:
-            self.logger.debug(f"[SKIP] Non-HTML content at {response.url} (Content-Type: {content_type})")
-            return
 
         # Подготовка пути к файлу ссылок
         link_log_path = os.path.join("output", f"{self.site_name}_links.txt")
@@ -211,6 +166,11 @@ class BaseSpider(scrapy.Spider):
             # Переход по ссылке
             yield response.follow(abs_url, callback=self.parse)
 
+
+        # Прекращаем обработку, если это не HTML
+        if not is_text_html:
+            self.logger.debug(f"[SKIP] Non-HTML content at {response.url} (Content-Type: {content_type})")
+            return
 
     def _safe_filename(self, url):
         """Преобразует URL в безопасное имя файла"""

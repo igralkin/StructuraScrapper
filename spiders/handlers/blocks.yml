@@ -1,0 +1,450 @@
+articles:
+  selectors:
+    - '.articles'
+    - '.blog-list'
+    - '.news-list'
+  item_selector: '.article, .post, li'
+  fields:
+    html: 'self'
+
+auth:
+  selectors:
+    - 'form[action*="login"]'
+    - '.login-form'
+    - '.auth-block'
+  fields:
+    html: 'self'
+
+calendar:
+  selectors:
+    - '.calendar'
+    - '.date-picker'
+    - '.schedule'
+  fields:
+    html: 'self'
+
+carousel:
+  selectors:
+    - '.carousel'
+    - '.slider'
+    - '.slides'
+  item_selector: '.slide, li, .slick-slide'
+  fields:
+    html: 'self'
+
+carousel_text:
+  selectors:
+    - '.carousel-text'
+    - '.slider-text'
+    - '.text-slideshow'
+  item_selector: '.slide, .item'
+  fields:
+    html: 'self'
+
+comment:
+  selectors:
+    - '.comment'
+    - '.comments-list'
+    - '.discussion'
+  item_selector: '.comment-item, li'
+  fields:
+    html: 'self'
+
+contact_form:
+  selectors:
+    - 'form[action*="contact"]'
+    - '.contact-form'
+    - '.feedback-form'
+  fields:
+    html: 'self'
+
+contacts:
+  selectors:
+    - '.contact'
+    - '.contacts'
+    - '.footer-contacts'
+  fields:
+    html: 'self'
+
+cta:
+  selectors:
+    - '.block.text_banner'
+    - '.cta-block'
+    - '.call-to-action'
+  fields:
+    html: 'self'
+
+call_to_action:
+  selectors:
+    - '.cta'
+    - '.call-to-action'
+    - '.block-cta'
+  fields:
+    html: 'self'
+
+download:
+  selectors:
+    - 'a[href$=".pdf"]'
+    - '.download-link'
+    - '.file-download'
+  fields:
+    html: 'self'
+
+empty:
+  selectors: []
+  fields:
+    html: 'self'
+
+faq:
+  selectors:
+    - '.faq'
+    - '.accordion'
+    - '.question-list'
+  item_selector: '.faq-item, .question'
+  fields:
+    html: 'self'
+
+filter:
+  selectors:
+    - '.filter'
+    - '.filters'
+    - '.filter-bar'
+  fields:
+    html: 'self'
+
+form_image:
+  selectors:
+    - '.form-image'
+    - '.image-form'
+    - 'form:has(img)'
+  fields:
+    html: 'self'
+
+form_text:
+  selectors:
+    - '.form-text'
+    - '.text-form'
+    - 'form:has(textarea)'
+  fields:
+    html: 'self'
+
+form_video:
+  selectors:
+    - '.form-video'
+    - '.video-form'
+    - 'form:has(video)'
+    - 'form:has(iframe[src*="youtube"])'
+  fields:
+    html: 'self'
+
+grid_3x2:
+  selectors:
+    - '.grid-3x2'
+    - '.elements-3x2'
+  fields:
+    html: 'self'
+
+image:
+  selectors:
+    - '.image-block'
+    - '.block-img'
+    - '.img-only'
+  fields:
+    html: 'self'
+
+image_2col:
+  selectors:
+    - '.two-col-image'
+    - '.img-2col'
+    - '.block-image-2col'
+  fields:
+    html: 'self'
+
+image_3col:
+  selectors:
+    - '.three-col-image'
+    - '.img-3col'
+    - '.block-image-3col'
+  fields:
+    html: 'self'
+
+image_action:
+  selectors:
+    - '.img-action'
+    - '.image-with-button'
+    - '.block-img-action'
+  fields:
+    html: 'self'
+
+image_text:
+  selectors:
+    - '.block-image-text'
+    - '.img-text'
+    - 'div.image-text'
+  fields:
+    html: 'self'
+
+list:
+  selectors:
+    - 'ul'
+    - 'ol'
+  item_selector: 'li'
+  fields:
+    html: 'self'
+
+map:
+  selectors:
+    - 'iframe[src*="google.com/maps"]'
+    - '.map'
+    - '.map-container'
+  fields:
+    html: 'self'
+
+mixed:
+  selectors:
+    - '.mixed-content'
+    - '.mixed-block'
+  fields:
+    html: 'self'
+
+partners:
+  selectors:
+    - '.partners'
+    - '.our-partners'
+    - '.partners-list'
+  fields:
+    html: 'self'
+
+popup:
+  selectors:
+    - '[data-modal]'
+    - '.popup'
+    - '.modal'
+    - '.widget'
+  fields:
+    html: 'self'
+
+product_card:
+  selectors:
+    - '.product-card'
+    - '.card-product'
+    - '.item-card'
+  fields:
+    html: 'self'
+
+products:
+  selectors:
+    - '.products-list'
+    - '.products'
+    - '.catalog'
+  item_selector: '.product-card, .card-product, .item-card'
+  fields:
+    html: 'self'
+
+products_services:
+  selectors:
+    - '.products'
+    - '.services-list'
+    - '.catalog'
+  item_selector: '.product, .item, li'
+  fields:
+    html: 'self'
+
+quiz:
+  selectors:
+    - '.quiz'
+    - '.survey'
+    - '.poll'
+  fields:
+    html: 'self'
+
+registration:
+  selectors:
+    - '.registration'
+    - '.signup-form'
+    - 'form[action*="register"]'
+  fields:
+    html: 'self'
+
+search:
+  selectors:
+    - 'form[action*="/search"]'
+    - '.search-bar'
+    - '.search-form'
+  fields:
+    html: 'self'
+
+search_results:
+  selectors:
+    - '.search-results'
+    - '.results-list'
+  fields:
+    html: 'self'
+
+social_links:
+  selectors:
+    - '.social-links'
+    - '.social'
+    - 'a[href*="facebook"]'
+    - 'a[href*="twitter"]'
+    - 'a[href*="instagram"]'
+  fields:
+    html: 'self'
+
+table:
+  selectors:
+    - 'table'
+  fields:
+    html: 'self'
+
+team_clients:
+  selectors:
+    - '.team'
+    - '.our-team'
+    - '.clients'
+    - '.our-clients'
+  fields:
+    html: 'self'
+
+testimonial:
+  selectors:
+    - '.testimonial'
+    - '.quote'
+    - '.reviews'
+  fields:
+    html: 'self'
+
+text_1col:
+  selectors:
+    - '.text-block'
+    - 'text-1col'
+    - 'article'
+    - 'div.text-block'
+    - 'div.block.text_banner'
+  fields:
+    html: 'self'
+
+text_2col:
+  selectors:
+    - '.text-2col'
+    - '.two-cols-text'
+    - '.text_block_2col'
+  fields:
+    html: 'self'
+
+text_3col:
+  selectors:
+    - '.text-3col'
+    - '.three-cols-text'
+    - '.text_block_3col'
+  fields:
+    html: 'self'
+
+text_5col:
+  selectors:
+    - '.text-5col'
+    - '.five-cols-text'
+    - '.text_block_5col'
+  fields:
+    html: 'self'
+
+text_image:
+  selectors:
+    - '.block-text-image'
+    - '.text-image'
+    - 'div.text_img'
+  fields:
+    html: 'self'
+
+text_video:
+  selectors:
+    - '.text-video'
+    - '.video-text'
+    - '.block-text-video'
+  fields:
+    html: 'self'
+
+timeline:
+  selectors:
+    - '.timeline'
+    - '.timeline-container'
+  fields:
+    html: 'self'
+
+unknown:
+  selectors: []
+  fields:
+    html: 'self'
+
+video:
+  selectors:
+    - 'iframe[src*="youtube"]'
+    - 'video'
+    - '.video-container'
+  fields:
+    html: 'self'
+
+video_text:
+  selectors:
+    - '.video-text'
+    - '.text-video'
+    - '.block-video-text'
+  fields:
+    html: 'self'
+
+# CMS headers and footers
+header_wordpress:
+  selectors:
+    - 'header.wp-header'
+    - 'header.site-header'
+    - 'div#masthead'
+  fields:
+    html: 'self'
+
+header_tilda:
+  selectors:
+    - 'header'
+    - '[class*="t-"][class*="header"]'
+  fields:
+    html: 'self'
+
+header_bitrix:
+  selectors:
+    - 'header'
+    - '[class*="bitrix"]'
+  fields:
+    html: 'self'
+
+header_html5:
+  selectors:
+    - 'header'
+  fields:
+    html: 'self'
+
+footer_wordpress:
+  selectors:
+    - 'footer.wp-footer'
+    - 'footer.site-footer'
+    - 'div#colophon'
+  fields:
+    html: 'self'
+
+footer_tilda:
+  selectors:
+    - 'footer'
+    - '[class*="t-"][class*="footer"]'
+  fields:
+    html: 'self'
+
+footer_bitrix:
+  selectors:
+    - 'footer'
+    - '[class*="bitrix"]'
+  fields:
+    html: 'self'
+
+footer_html5:
+  selectors:
+    - 'footer'
+  fields:
+    html: 'self'

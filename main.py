@@ -38,7 +38,7 @@ def main():
         BaseSpider,
         start_url=args.start_url,
         max_pages=args.max_pages,
-        depth=args.depth,
+        max_depth=args.depth,
         save_html=args.save_html,
         site_name=site_name,
     )
