@@ -52,6 +52,15 @@ docker run structura-crawler https://structura.app
 ```bash
 docker run structura-crawler https://mindbox.ru --max-pages 800 --depth 4 --save-html
 ```
+Запуск сразу несколько сайтов с начальными настройками
+```bash
+docker compose up --build
+```
+Остановка 
+```bash
+docker compose down
+```
+
 ❗ Требования
 
     Docker версии 20.10+
