@@ -1,6 +1,7 @@
 # base_spider.py
 import scrapy
 from urllib.parse import urlparse, urljoin
+from block_parser.parser import parse_blocks
 import os
 import re
 from cms_detector.detector import detect_cms_by_html
@@ -41,6 +42,15 @@ class BaseSpider(scrapy.Spider):
         self.pages_crawled = 0
         self.visited_urls = set()
         self.output_dir = os.path.join("raw", self.site_name)
+
+        # Подготовка папки с HTML (если включено сохранение)
+        if self.save_html:
+            os.makedirs(self.output_dir, exist_ok=True)
+            # Очистка предыдущих HTML-файлов
+            for fname in os.listdir(self.output_dir):
+                fpath = os.path.join(self.output_dir, fname)
+                if os.path.isfile(fpath):
+                    os.remove(fpath)
 
         # Подготовка пути к лог-файлу ссылок и его очистка
         self.link_log_path = os.path.join("output", f"{self.site_name}_links.txt")
@@ -86,6 +96,9 @@ class BaseSpider(scrapy.Spider):
         else:
             cms = None
 
+        # Парсинг header/footer блоков
+        blocks = parse_blocks(response.text, cms or "html5", url)
+
         # Сохранение HTML
         if self.save_html and is_text_html:
             filename = self._safe_filename(url)
@@ -99,6 +112,7 @@ class BaseSpider(scrapy.Spider):
             "url": url,
             "depth": response.meta.get("depth", 0),
             "cms": cms,
+            "blocks": blocks if is_text_html else None
             # "html": response.text if self.save_html and is_text_html else None,
         }
 

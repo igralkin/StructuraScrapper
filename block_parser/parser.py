@@ -37,6 +37,6 @@ def parse_blocks(html: str, cms: str, url: str = None) -> dict:
             utils.log_block_result(url, block, result.get(block, {}))
 
     return {
-        "cms": cms,
+        # "cms": cms,
         "blocks": result
     }

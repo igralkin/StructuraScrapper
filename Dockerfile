@@ -1,10 +1,15 @@
-# Dockerfile
+# Базовый минимальный образ
 FROM python:3.10-slim
 
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-COPY . /app
-
+# Устанавливаем зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "main.py"]
+# Копируем весь проект
+COPY . .
+
+# По умолчанию запускаем main.py с возможностью передать аргументы
+ENTRYPOINT ["python", "main.py"]

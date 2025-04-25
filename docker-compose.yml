@@ -1,0 +1,14 @@
+services:
+  structura:
+    build: .
+    command: https://structura.app --max-pages 500 --depth 3 --save-html
+    volumes:
+      - ./output:/app/output
+      - ./raw:/app/raw
+
+  mindbox:
+    build: .
+    command: https://mindbox.ru --max-pages 800 --depth 4 --save-html
+    volumes:
+      - ./output:/app/output
+      - ./raw:/app/raw
