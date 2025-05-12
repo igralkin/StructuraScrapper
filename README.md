@@ -17,7 +17,7 @@ pip install -r requirements.txt
 ### ▶️ Запуск
 
 ```bash
-python main.py https://example.com \
+python main.py https://structura.app \
   --max-pages 1000 \
   --depth 5 \
   --save-html \
@@ -31,16 +31,13 @@ docker build -t structura-crawler .
 ```
 Запуск контейнера
 ```bash
-docker run structura-crawler https://example.com --max-pages 500 --depth 3 --save-html
+docker run structura-crawler https://structura.app --max-pages 500 --depth 3 --save-html
 ```
-Аргументы можно передавать прямо после имени контейнера!
+Аргументы можно передавать прямо после имени контейнера.
 Например:
-
-    Обход до 500 страниц
-
-    Глубина 3 уровня
-
-    Сохранение HTML-контента каждой страницы
+- Обход до 500 страниц (--max-pages)
+- Глубина 3 уровня (--depth)
+- Сохранение HTML-контента каждой страницы (--save-html)
 
 📂 Примеры команд запуска
 
@@ -147,7 +144,7 @@ crawler/
 
 ```bash
 docker build -t structura-crawler .
-docker run structura-crawler https://example.com --max-pages 200 --depth 3 --save-html
+docker run structura-crawler https://structura.app --max-pages 200 --depth 3 --save-html
 ```
 
 ---
