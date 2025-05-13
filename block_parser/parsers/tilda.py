@@ -13,7 +13,7 @@ FOOTER_CLASSES = ["t-footer", "t*-footer"]
 
 
 def find_tilda_block(soup: BeautifulSoup, suffix: str):
-    candidates = soup.find_all("div", class_=lambda x: x and any("rec" in c for c in x))
+    candidates = soup.select("div[class*='rec']")
     for el in candidates:
         cls = el.get("class", [])
         if any(c.endswith(suffix) for c in cls):
