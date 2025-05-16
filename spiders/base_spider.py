@@ -80,7 +80,7 @@ class BaseSpider(scrapy.Spider):
         - определяет CMS (только на первых 5 страницах).
         """
         if self.pages_crawled >= self.max_pages:
-            return
+            return iter([])
 
         content_type = response.headers.get("Content-Type", b"").decode("utf-8")
         is_text_html = "text/html" in content_type
@@ -119,7 +119,7 @@ class BaseSpider(scrapy.Spider):
         # Прекращаем обработку, если это не HTML
         if not is_text_html:
             self.logger.debug(f"[SKIP] Non-HTML content at {response.url} (Content-Type: {content_type})")
-            return
+            return iter([])
 
         # Подготовка пути к файлу ссылок
         link_log_path = os.path.join("output", f"{self.site_name}_links.txt")

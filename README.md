@@ -25,6 +25,7 @@ python main.py https://structura.app \
 ```
 
 🐳 Запуск через Docker
+
 Сборка образа
 ```bash
 docker build -t structura-crawler .
