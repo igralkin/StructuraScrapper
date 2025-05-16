@@ -85,22 +85,30 @@ class BaseSpider(scrapy.Spider):
         content_type = response.headers.get("Content-Type", b"").decode("utf-8")
         is_text_html = "text/html" in content_type
 
+        if not is_text_html:
+            self.logger.debug(f"[SKIP] Non-HTML content at {response.url} (Content-Type: {content_type})")
+            return iter([])
+
         self.pages_crawled += 1
         url = response.url
         self.visited_urls.add(url)
 
         # CMS определяем только на первых 5 страницах
-        if self.pages_crawled <= 5 and is_text_html:
+        if self.pages_crawled <= 5:
             cms = detect_cms_by_html(response.text, url)
             self.logger.info(f"[CMS] {url} -> {cms}")
         else:
             cms = None
 
-        # Парсинг header/footer блоков
-        blocks = parse_blocks(response.text, cms or "html5", url)
+        # Парсинг header/footer блоков с защитой от ошибок
+        try:
+            blocks = parse_blocks(response.text, cms or "html5", url)
+        except Exception as e:
+            self.logger.warning(f"[PARSE ERROR] Failed to parse blocks at {url}: {e}")
+            blocks = {}
 
         # Сохранение HTML
-        if self.save_html and is_text_html:
+        if self.save_html:
             filename = self._safe_filename(url)
             filepath = os.path.join(self.output_dir, f"{filename}.html")
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -112,14 +120,8 @@ class BaseSpider(scrapy.Spider):
             "url": url,
             "depth": response.meta.get("depth", 0),
             "cms": cms,
-            "blocks": blocks if is_text_html else None
-            # "html": response.text if self.save_html and is_text_html else None,
+            "blocks": blocks
         }
-
-        # Прекращаем обработку, если это не HTML
-        if not is_text_html:
-            self.logger.debug(f"[SKIP] Non-HTML content at {response.url} (Content-Type: {content_type})")
-            return iter([])
 
         # Подготовка пути к файлу ссылок
         link_log_path = os.path.join("output", f"{self.site_name}_links.txt")
